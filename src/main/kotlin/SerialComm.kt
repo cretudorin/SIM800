@@ -15,6 +15,7 @@ class SerialComm(portDescription: String, private var baudRate: Int = 115200) {
     private var status = false
 
     init {
+
         serialPort = SerialPort.getCommPort(this.portDescription).also { it.baudRate = baudRate }
         this.status = openConnection()
     }
@@ -35,7 +36,7 @@ class SerialComm(portDescription: String, private var baudRate: Int = 115200) {
 
     fun serialRead(): Observable<String> {
 
-        return Observable.create<String> { emitter ->
+        val observable =  Observable.create<String> { emitter ->
             serialPort.addDataListener(object : SerialPortDataListener {
 
                 override fun getListeningEvents(): Int {
@@ -62,6 +63,8 @@ class SerialComm(portDescription: String, private var baudRate: Int = 115200) {
                 serialPort.closePort()
             }
         }
+        observable.publish()
+        return observable
     }
 
     fun readString(): String {
@@ -93,5 +96,25 @@ class SerialComm(portDescription: String, private var baudRate: Int = 115200) {
         } catch (e: Exception) {
             throw Exception("Not connected")
         }
+    }
+
+    fun serialRead(limit: Int): String {
+
+        //in case of unlimited incoming data, set a limit for number of readings
+        serialPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 1, 1)
+        var out = ""
+        var count = 0
+        val input = Scanner(serialPort.inputStream)
+        try {
+            while (input.hasNext() && count <= limit) {
+                out += input.next() + "\n"
+                count++
+            }
+            input.close()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        return out
     }
 }

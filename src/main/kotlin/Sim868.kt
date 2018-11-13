@@ -20,7 +20,6 @@ class Sim868(port: String, baud_rate: Int = 115200) {
     fun setEcho(value: Boolean) = sendCommand("E${value.toInt()}")
 
     // GPS
-    fun setGpsStatus(value: Boolean) = sendCommand("+CGNSPWR=${value.toInt()}")
 
     fun decodeGPS(stringData: String): Map<String, String> {
         val gpsArray = stringData.replace("+UGNSINF", "").split(",")
@@ -54,8 +53,25 @@ class Sim868(port: String, baud_rate: Int = 115200) {
         }
     }
 
+    fun setGpsStatus(value: Boolean) = sendCommand("+CGNSPWR=${value.toInt()}")
     fun getLocation() = sendCommand("+CGNSINF")
-    fun getPosition(interval: Int = 2) = sendCommand("+CGNSURC=$interval")
+
+    fun getPosition(interval: Int = 2): Observable<Map<String, String>> {
+
+        setGpsStatus(true)
+        sendCommand("+CGNSURC=$interval")
+
+        val observable = Observable.create<Map<String, String>> { emitter ->
+
+            serialObservable.subscribe { it ->
+                if (it.contains("+UGNSINF")) {
+                    emitter.onNext(decodeGPS(it))
+                }
+            }
+        }
+        observable.publish()
+        return observable
+    }
 
     // GSM
     fun gsmNetworkScan() = sendCommand("+COPS=?")

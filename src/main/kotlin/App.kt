@@ -2,6 +2,21 @@ package sim868.kotlin
 
 import com.pi4j.io.gpio.*
 import java.net.URI
+import com.fazecast.jSerialComm.*
+import com.sun.deploy.util.SystemUtils.readBytes
+import com.fazecast.jSerialComm.SerialPort.LISTENING_EVENT_DATA_AVAILABLE
+import com.fazecast.jSerialComm.SerialPortEvent
+import com.fazecast.jSerialComm.SerialPortDataListener
+import com.sun.deploy.util.SystemUtils.readBytes
+import com.fazecast.jSerialComm.SerialPort.LISTENING_EVENT_DATA_AVAILABLE
+import com.fazecast.jSerialComm.SerialPort.getCommPorts
+import com.fazecast.jSerialComm.SerialPort.LISTENING_EVENT_DATA_WRITTEN
+
+
+
+
+
+
 
 fun main(args: Array<String>) {
 
@@ -44,7 +59,18 @@ fun main(args: Array<String>) {
         simHat.checkLocalIp()
     }
 
-    fun httpGet(url: String, port: String): Unit {
+    fun httpGet(url: String, port: String, callback: (result: String) -> Unit): Unit {
+//
+        simHat.getObservable().subscribe({
+            if (it.contains("+HTTPACTION:")) {
+                val length = it.split(",").toList().last().replace("\\s".toRegex(), "").toInt()
+                println(length)
+                println(simHat.serialPort.serialRead(length))
+            }
+
+        }, { throw(it) }, { println("connection completed") })
+        Thread.sleep(300)
+        startGPRS()
 
         simHat.sendCommand("+SAPBR=3,1,\"APN\",\"web.vodafone.de\"")
         simHat.sendCommand("+SAPBR=1,1")
@@ -55,22 +81,22 @@ fun main(args: Array<String>) {
         simHat.sendCommand("+HTTPREAD")
         Thread.sleep(5000)
         simHat.sendCommand("+HTTPTERM")
+
+
+        callback("test")
     }
 
     simHat.getObservable().subscribe({
-
         println(parseResponse(it))
-//        it?.let { webSocket.send(parseResponse(it)) }
 
-    }, { throw(it) }, { println("connection completed") })
+    }, { throw(it) }, {
+        println("connection completed")
+    })
 
-//    simHat.sendCommand("+CFUN?")
-//    simHat.sendCommand("+CFUN=1")
-//    startGPRS()
-//    simHat.sendCommand("+CIPSTART=\"TCP\",\"zmeurica.ddns.net\",\"8080\"")
-//    simHat.sendCommand("+CIPSEND")
-//    startGPRS()
-    httpGet("zmeurica.ddns.net", "8080")
+    simHat.setGpsStatus(true)
+    simHat.getPosition(2)
+
+
 }
 
 

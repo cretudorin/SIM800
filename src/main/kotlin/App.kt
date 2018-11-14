@@ -1,22 +1,5 @@
 package sim868.kotlin
 
-import com.pi4j.io.gpio.*
-import java.net.URI
-import com.fazecast.jSerialComm.*
-import com.sun.deploy.util.SystemUtils.readBytes
-import com.fazecast.jSerialComm.SerialPort.LISTENING_EVENT_DATA_AVAILABLE
-import com.fazecast.jSerialComm.SerialPortEvent
-import com.fazecast.jSerialComm.SerialPortDataListener
-import com.sun.deploy.util.SystemUtils.readBytes
-import com.fazecast.jSerialComm.SerialPort.LISTENING_EVENT_DATA_AVAILABLE
-import com.fazecast.jSerialComm.SerialPort.getCommPorts
-import com.fazecast.jSerialComm.SerialPort.LISTENING_EVENT_DATA_WRITTEN
-
-
-
-
-
-
 
 fun main(args: Array<String>) {
 
@@ -59,18 +42,9 @@ fun main(args: Array<String>) {
         simHat.checkLocalIp()
     }
 
-    fun httpGet(url: String, port: String, callback: (result: String) -> Unit): Unit {
-//
-        simHat.getObservable().subscribe({
-            if (it.contains("+HTTPACTION:")) {
-                val length = it.split(",").toList().last().replace("\\s".toRegex(), "").toInt()
-                println(length)
-                println(simHat.serialPort.serialRead(length))
-            }
 
-        }, { throw(it) }, { println("connection completed") })
-        Thread.sleep(300)
-        startGPRS()
+    fun httpGet(url: String, port: String) {
+
 
         simHat.sendCommand("+SAPBR=3,1,\"APN\",\"web.vodafone.de\"")
         simHat.sendCommand("+SAPBR=1,1")
@@ -78,24 +52,27 @@ fun main(args: Array<String>) {
         simHat.sendCommand("+HTTPPAR=\"CID\",1")
         simHat.sendCommand("+HTTPPARA=\"URL\",\"http://$url:$port\"")
         simHat.sendCommand("+HTTPACTION=0")
-        simHat.sendCommand("+HTTPREAD")
+//
         Thread.sleep(5000)
-        simHat.sendCommand("+HTTPTERM")
+        simHat.sendCommand("+HTTPREAD")
+
+        simHat.serialObservable.takeUntil {it.toUpperCase().contains("+HTTPREAD:")}.subscribe { simHat.sendCommand("+HTTPTERM")}
 
 
-        callback("test")
+
+//
     }
 
-    simHat.getObservable().subscribe({
-        println(parseResponse(it))
-
+    simHat.serialObservable.subscribe({
+        println("1: ${parseResponse(it)}")
     }, { throw(it) }, {
         println("connection completed")
     })
 
-    simHat.setGpsStatus(true)
-    simHat.getPosition(2)
-
+    simHat.setGpsStatus(false)
+//    simHat.getPosition(2)
+    startGPRS()
+    httpGet("zmeurica.ddns.net", "8080")
 
 }
 

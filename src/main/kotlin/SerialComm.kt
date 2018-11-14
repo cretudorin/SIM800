@@ -8,63 +8,42 @@ import java.io.PrintWriter
 import java.util.*
 
 
-class SerialComm(portDescription: String, private var baudRate: Int = 115200) {
+class SerialComm(port: String, private var baudRate: Int = 115200) {
 
-    private var serialPort: SerialPort
-    private var portDescription: String? = portDescription
-    private var status = false
-
-    init {
-
-        serialPort = SerialPort.getCommPort(this.portDescription).also { it.baudRate = baudRate }
-        this.status = openConnection()
-    }
-
-
-    fun openConnection(): Boolean {
-
-        return if (serialPort.openPort()) {
-            return try { Thread.sleep(100)
-                true
-            } catch (e: Exception) {
-                throw  Exception(e)
-            }
-        } else {
-            false
-        }
+    private var serialPort = SerialPort.getCommPort(port).also {
+        it.baudRate = baudRate
+        it.openPort()
     }
 
     fun serialRead(): Observable<String> {
 
-        val observable =  Observable.create<String> { emitter ->
+        return Observable.create<String> { emitter ->
             serialPort.addDataListener(object : SerialPortDataListener {
 
-                override fun getListeningEvents(): Int {
-                    return SerialPort.LISTENING_EVENT_DATA_AVAILABLE
-                }
+                override fun getListeningEvents(): Int = SerialPort.LISTENING_EVENT_DATA_AVAILABLE
 
                 override fun serialEvent(serialPortEvent: SerialPortEvent) {
 
-                    if (serialPortEvent.eventType != SerialPort.LISTENING_EVENT_DATA_AVAILABLE) {
-                        println("event_type=" + serialPortEvent.eventType)
-                    }
-
                     try {
-                        val len = serialPortEvent.serialPort.bytesAvailable()
-                        val data = ByteArray(len)
-                        serialPortEvent.serialPort.readBytes(data, len.toLong())
-                        emitter.onNext(String(data))
+
+                        if (serialPort.bytesAvailable() > 0) {
+                            val readBuffer = ByteArray(serialPort.bytesAvailable())
+                            serialPort.readBytes(readBuffer, readBuffer.size.toLong())
+
+                            val result = String(readBuffer)
+
+                            if (result.isNotBlank()) {
+                                emitter.onNext(result)
+                            }
+
+                        }
+
                     } catch (exp: Exception) {
-                        exp.printStackTrace()
+                        emitter.onError(exp)
                     }
                 }
             })
-            if (!serialPort.openPort()) {
-                serialPort.closePort()
-            }
-        }
-        observable.publish()
-        return observable
+        }.publish().autoConnect()
     }
 
     fun readString(): String {

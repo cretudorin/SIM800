@@ -1,13 +1,15 @@
 package sim868.kotlin
 
 import io.reactivex.Observable
+import io.reactivex.Observer
+import io.reactivex.subjects.PublishSubject
 
 fun Boolean.toInt() = if (this) 1 else 0
 
 class Sim868(port: String, baud_rate: Int = 115200) {
 
     var serialPort: SerialComm = SerialComm(port, baud_rate)
-    private val serialObservable = serialPort.serialRead()
+    val serialObservable = serialPort.serialRead()
 
 
     // commands
@@ -16,11 +18,9 @@ class Sim868(port: String, baud_rate: Int = 115200) {
     fun sendRawCommand(command: String) = Thread.sleep(100).also { serialPort.serialWrite(command) }
     fun repeatCommand() = sendCommand("A/")
     fun readString(): String = serialPort.readString()
-    fun getObservable(): Observable<String> = serialObservable
     fun setEcho(value: Boolean) = sendCommand("E${value.toInt()}")
 
     // GPS
-
     fun decodeGPS(stringData: String): Map<String, String> {
         val gpsArray = stringData.replace("+UGNSINF", "").split(",")
         val mapping = listOf(
@@ -98,7 +98,7 @@ class Sim868(port: String, baud_rate: Int = 115200) {
     fun checkGPRSAttachment() = sendCommand("+CGATT?")
     fun bringUpWireless() = sendCommand("+CIICR")
     fun checkLocalIp() = sendCommand("+CIFSR")
-    fun enableGPRSData() = sendCommand("CGATT=1")
+    fun enableGPRSData() = sendCommand("+CGATT=1")
     fun setApn(apn: String) = sendCommand("+CSTT=\"$apn\"")
     // sms
     fun readSms(index: Int) = smsTextMode(true).also { sendCommand("+CMGR=$index") }

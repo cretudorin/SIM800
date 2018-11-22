@@ -12,22 +12,16 @@ class WebSocket(uri: URI) : WebSocketClient(uri) {
     }
 
     override fun onOpen(handshakedata: ServerHandshake?) {
-        println(handshakedata)
     }
 
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
-        println(code)
-        println(reason)
-        println(remote)
+
     }
 
     override fun onMessage(message: String?) {
-        println(message)
     }
 
 
     override fun onError(ex: Exception?) {
-        println(ex)
     }
 }
-//val wsClient = WebSocketClient(URI("ws://127.0.0.1"))

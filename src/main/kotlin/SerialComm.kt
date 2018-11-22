@@ -31,9 +31,8 @@ class SerialComm(port: String, private var baudRate: Int = 115200) {
                             serialPort.readBytes(readBuffer, readBuffer.size.toLong())
 
                             val result = String(readBuffer)
-
                             if (result.isNotBlank()) {
-                                emitter.onNext(result)
+                                emitter.onNext(result.replace("\\s".toRegex(), ""))
                             }
 
                         }
@@ -43,7 +42,8 @@ class SerialComm(port: String, private var baudRate: Int = 115200) {
                     }
                 }
             })
-        }.publish().autoConnect()
+        }
+            .publish().autoConnect()
     }
 
     fun readString(): String {

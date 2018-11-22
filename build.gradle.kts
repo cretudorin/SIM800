@@ -26,6 +26,7 @@ dependencies {
     compile("com.fazecast:jSerialComm:[2.0.0,3.0.0)")
     compile("io.reactivex.rxjava2:rxkotlin:2.3.0")
     compile("org.java-websocket:Java-WebSocket:1.3.9")
+    compile("io.jenetics:jpx:1.4.0")
 
 }
 

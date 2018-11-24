@@ -1,15 +1,19 @@
 package sim868.kotlin
 
-fun Boolean.toInt() = if (this) 1 else 0
+import com.pi4j.io.gpio.RaspiPin
+import io.reactivex.disposables.Disposable
 
-class Sim868(port: String, baud_rate: Int = 115200) {
+
+class Sim800(port: String, baud_rate: Int = 115200) {
 
     var serialPort: SerialComm = SerialComm(port, baud_rate)
     val serialObservable = serialPort.serialRead()
 
+    val eventListeners = mutableMapOf<String, Disposable?>()
 
     fun once(event: String, eventHandler: (data: String) -> Unit) {
-        serialObservable.takeUntil {
+
+        eventListeners[event] = serialObservable.takeUntil {
             it.toUpperCase().contains(event.toUpperCase())
         }.subscribe {
             if (it.toUpperCase().contains(event.toUpperCase())) {
@@ -19,14 +23,19 @@ class Sim868(port: String, baud_rate: Int = 115200) {
     }
 
     fun addEventListener(event: String, eventHandler: (data: String) -> Unit) {
-        serialObservable.subscribe {
+        eventListeners[event] = serialObservable.subscribe {
             if (it.toUpperCase().contains(event.toUpperCase())) {
                 eventHandler(it)
             }
         }
     }
 
-    private fun sendCommand(command: String) = Thread.sleep(100).also { serialPort.serialWrite("AT$command\r") }
+    fun disposeEventListener(event: String){
+
+        eventListeners[event]?.dispose()
+    }
+
+    private fun sendCommand(command: String) = Thread.sleep(50).also { serialPort.serialWrite("AT$command\r") }
 
     fun testCommand(command: String) {
         sendCommand("$command=?")
@@ -44,7 +53,16 @@ class Sim868(port: String, baud_rate: Int = 115200) {
         sendCommand(command)
     }
 
-    fun sendRawCommand(command: String) = Thread.sleep(100).also { serialPort.serialWrite(command) }
+    fun sendRawCommand(command: String) = Thread.sleep(50).also { serialPort.serialWrite(command) }
 
+    // only for Waveshare GSM/GPRS/GPS HAT when used as hat
+    fun togglePowerState() {
+        val gpio = Gpio(RaspiPin.GPIO_07)
+        gpio.setLow()
+        Thread.sleep(4000)
+        gpio.setHigh()
+        Thread.sleep(4000)
+        gpio.release()
+    }
 }
 

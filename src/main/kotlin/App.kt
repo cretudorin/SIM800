@@ -1,28 +1,11 @@
 package sim868.kotlin
 
-import com.fazecast.jSerialComm.SerialPort
-import com.pi4j.io.gpio.RaspiPin
-import com.pi4j.platform.PlatformManager
-import io.jenetics.jpx.GPX
 import java.io.File
-import java.io.FilenameFilter
-import java.net.URI
-import jdk.nashorn.tools.ShellFunctions.input
-import com.pi4j.system.SystemInfo
 
 //sudo systemctl stop serial-getty@ttyAMA0.service
 // sudo systemctl disable serial-getty@ttyS0.service
 
 
-fun turnOnModem() {
-    Thread.sleep(200)
-    val gpio = Gpio(RaspiPin.GPIO_07)
-    gpio.setLow()
-    Thread.sleep(4000)
-    gpio.setHigh()
-    Thread.sleep(4000)
-    gpio.release()
-}
 
 
 //
@@ -78,29 +61,30 @@ fun getPort(): String {
 
 
 fun main(args: Array<String>) {
-//    val webSocket = WebSocket(URI("ws://185.122.87.86:8080"))
-//    File("/dev").walkTopDown().forEach {
-//        println(it)
-//    }
-//    turnOnModem()
+
     val port = getPort()
-    println("Sim init")
-    println(port)
-    val simHat =  Sim868(port)
+    val simHat =  Sim800(port)
 
-    simHat.executeCommand(SIM868Commands.echoOff)
-    simHat.writeCommand(SIM868Commands.gpsState, "1")
-    simHat.writeCommand(SIM868Commands.getPositionOnInterval, "2")
+    simHat.executeCommand(Sim800Commands.echoOn)
 
 
-//    val file = File("file.gpx")
+
+    // get GPS data
+    simHat.writeCommand(Sim800Commands.gpsState, "1")
+    simHat.writeCommand(Sim800Commands.getPositionOnInterval, "2")
+    var i = 0
     simHat.addEventListener(SIM868Responses.gpsInfo) {
-        val gpsData = GpsData(it)
 
-//        gpsData.fixStatus
-//        println(gpsData.fixStatus)
-//        println(gpsData.lat)
-//        println(gpsData.long)
+        val gpsData = DataParsers.parseGps(it)
+
+        gpsData?.let {
+            i++
+            println(gpsData.lat)
+        }
+
+        if(i == 10){
+            simHat.disposeEventListener(SIM868Responses.gpsInfo)
+        }
     }
 
 
@@ -115,7 +99,14 @@ fun main(args: Array<String>) {
 //                })
 //        })
 //        .build()
-//
+
+//    new sms
+//    +CMTI:"SM",4
+//    simHat.executeCommand(Sim800Commands.dial("+")
+//    simHat.writeCommand(Sim800Commands.smsMessageFormat, "1")
+//    simHat.executeCommand(Sim800Commands.allSMS)
+
+    // listen to all
 //    simHat.serialObservable.subscribe({
 //        println(it)
 //    }, { throw(it) }, {

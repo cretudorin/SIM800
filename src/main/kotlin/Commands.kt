@@ -1,6 +1,6 @@
 package sim868.kotlin
 
-class SIM868Commands {
+class Sim800Commands {
 
     companion object {
 
@@ -72,5 +72,6 @@ class SIM868Commands {
 class SIM868Responses {
     companion object {
         val gpsInfo = "UGNSINF"
+        val newSms = "CMTI"
     }
 }

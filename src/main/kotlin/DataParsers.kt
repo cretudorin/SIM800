@@ -1,36 +1,7 @@
 package sim868.kotlin
 
 
-class GpsData(gpgStringResponse: String) {
-
-    private val gpsArray = gpgStringResponse.replace("+UGNSINF:", "").split(",")
-    private val mapping = listOf(
-        "gpsRunStatus",
-        "fixStatus",
-        "utcDataTime",
-        "lat",
-        "long",
-        "mslAltitude",
-        "speedOverGround",
-        "courseOverGround",
-        "fixMode",
-        "reserved1",
-        "hdop",
-        "pdop",
-        "vdop",
-        "reserved2",
-        "gpsSatellitesInView",
-        "gnssSatellitesUsed",
-        "glonassStatelitesInView",
-        "reserved3",
-        "c/n0Max",
-        "hpa",
-        "vpa"
-    )
-
-    private val length = gpsArray.count()
-
-    private val gpsDataMap = gpsArray.associateBy({ mapping[gpsArray.indexOf(it)] }, { it })
+class GpsData(gpsDataMap: Map<String, String>) {
 
     val gpsRunStatus: String by gpsDataMap
     val fixStatus: String by gpsDataMap
@@ -54,4 +25,44 @@ class GpsData(gpgStringResponse: String) {
     val hpa: String by gpsDataMap // Horizontal Position Accuracy
     val vpa: String by gpsDataMap // Vertical Position Accuracy
 
+}
+
+class DataParsers {
+    companion object {
+        fun parseGps(gpgStringResponse: String): GpsData? {
+            val gpsArray = gpgStringResponse.replace("+UGNSINF:", "").split(",")
+            val mapping = listOf(
+                "gpsRunStatus",
+                "fixStatus",
+                "utcDataTime",
+                "lat",
+                "long",
+                "mslAltitude",
+                "speedOverGround",
+                "courseOverGround",
+                "fixMode",
+                "reserved1",
+                "hdop",
+                "pdop",
+                "vdop",
+                "reserved2",
+                "gpsSatellitesInView",
+                "gnssSatellitesUsed",
+                "glonassStatelitesInView",
+                "reserved3",
+                "c/n0Max",
+                "hpa",
+                "vpa"
+            )
+
+            val length = gpsArray.count()
+
+            return if (length == 21) {
+                val gpsDataMap = gpsArray.associateBy({ mapping[gpsArray.indexOf(it)] }, { it })
+                GpsData(gpsDataMap)
+            } else {
+                null
+            }
+        }
+    }
 }

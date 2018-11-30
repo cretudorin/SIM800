@@ -60,12 +60,22 @@ class Sim800Commands {
         val gprsAttachment = "+CGATT"
         val wirelessStatus = "+CIICR"
         val localIP = "+CIFSR"
-        fun setAPN(apn: String) = "+CSTT=\"$apn\""
+        fun setAPN(apn: String, user: String = "", password: String = "") = "+CSTT=\"$apn\",\"$user\", \"$password\""
         val smsMessageFormat = "+CMGF"
-        val readSMS= "+CMGR"
+        val readSMS = "+CMGR"
         val allSMS = "+CMGL=\"ALL\""
         val deleteSMS = "+CMGD"
         val productInfo = "I"
+        val setBearer = "+SAPBR"
+
+        val initHttpService = "+HTTPINIT"
+        val stopHttpService = "+HTTPTERM"
+        val setHttpParam = "+HTTPPARA"
+        val httpRead = "+HTTPREAD"
+        val doGetRequest = "+HTTPACTION=0"
+        val doPostRequest = "+HTTPACTION=1"
+        val doHeadRequest = "+HTTPACTION=2"
+        val doDeleteRequest = "+HTTPACTION=3"
     }
 }
 

@@ -4,12 +4,12 @@ import com.pi4j.io.gpio.RaspiPin
 import io.reactivex.disposables.Disposable
 
 
-class Sim800(port: String, baud_rate: Int = 115200) {
+class Sim800(port: String, baud_rate: Int = 115200, var apn: String) {
 
-    var serialPort: SerialComm = SerialComm(port, baud_rate)
+    private var serialPort: SerialComm = SerialComm(port, baud_rate)
     val serialObservable = serialPort.serialRead()
 
-    val eventListeners = mutableMapOf<String, Disposable?>()
+    private val eventListeners = mutableMapOf<String, Disposable?>()
 
     fun once(event: String, eventHandler: (data: String) -> Unit) {
 
@@ -35,7 +35,7 @@ class Sim800(port: String, baud_rate: Int = 115200) {
         eventListeners[event]?.dispose()
     }
 
-    private fun sendCommand(command: String) = Thread.sleep(50).also { serialPort.serialWrite("AT$command\r") }
+    private fun sendCommand(command: String) = Thread.sleep(100).also { serialPort.serialWrite("AT$command\r") }
 
     fun testCommand(command: String) {
         sendCommand("$command=?")
@@ -53,7 +53,7 @@ class Sim800(port: String, baud_rate: Int = 115200) {
         sendCommand(command)
     }
 
-    fun sendRawCommand(command: String) = Thread.sleep(50).also { serialPort.serialWrite(command) }
+    fun sendRawCommand(command: String) = Thread.sleep(100).also { serialPort.serialWrite("$command\r") }
 
     // only for Waveshare GSM/GPRS/GPS HAT when used as hat
     fun togglePowerState() {
@@ -64,5 +64,28 @@ class Sim800(port: String, baud_rate: Int = 115200) {
         Thread.sleep(4000)
         gpio.release()
     }
+
+    fun enableGprs(){
+
+//        writeCommand(Sim800Commands.setBearer,"0,1")
+        writeCommand(Sim800Commands.setBearer,"3,1,\"Contype\", \"GPRS\"")
+        writeCommand(Sim800Commands.setBearer,"3,1,\"APN\",\"$apn\"")
+        writeCommand(Sim800Commands.setBearer,"1,1")
+    }
+
+    fun httpGet(url: String, port: String) {
+
+        executeCommand(Sim800Commands.initHttpService)
+        writeCommand(Sim800Commands.setHttpParam, "\"CID\", 1")
+        writeCommand(Sim800Commands.setHttpParam, "\"URL\",\"$url:$port\"")
+        executeCommand(Sim800Commands.doGetRequest)
+
+        once("+HTTPACTION:") {
+            executeCommand(Sim800Commands.httpRead)
+            executeCommand(Sim800Commands.stopHttpService)
+        }
+    }
+
+
 }
 

@@ -21,7 +21,6 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib", kotlinVersion))
-//    implementation (kotlin("kotlin-reflect:$kotlinVersion"))
     compile("org.bidib.com.pi4j:pi4j-core:1.2.M1")
     compile("com.fazecast:jSerialComm:[2.0.0,3.0.0)")
     compile("io.reactivex.rxjava2:rxkotlin:2.3.0")

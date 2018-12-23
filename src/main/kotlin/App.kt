@@ -1,53 +1,9 @@
-package sim868.kotlin
+package sim800.kotlin
 
 import java.io.File
-import javax.smartcardio.CommandAPDU
 
 //sudo systemctl stop serial-getty@ttyAMA0.service
 //sudo systemctl disable serial-getty@ttyS0.service
-
-
-//    val gpx = GPX.builder()
-//        .addTrack({ track ->
-//            track
-//                .addSegment({ segment ->
-//                    segment
-//                        .addPoint({ p -> p.lat(48.2081743).lon(16.3738189).ele(160) })
-//                        .addPoint({ p -> p.lat(48.2081743).lon(16.3738189).ele(161) })
-//                        .addPoint({ p -> p.lat(48.2081743).lon(16.3738189).ele(162) })
-//                })
-//        })
-//        .build()
-
-
-//
-//    fun startGPRS() {
-//        simHat.setApn("web.vodafone.de\",\"\",\"")
-//        simHat.checkGPRSAttachment()
-//        simHat.bringUpWireless()
-//        simHat.sendCommand("+CIFSR")
-//        simHat.enableGPRSData()
-//        simHat.checkLocalIp()
-//    }
-//
-//
-//    fun httpGet(url: String, port: String) {
-//
-//
-//        simHat.sendCommand("+SAPBR=3,1,\"APN\",\"web.vodafone.de\"")
-//        simHat.sendCommand("+SAPBR=1,1")
-//        simHat.sendCommand("+HTTPINIT")
-//        simHat.sendCommand("+HTTPPAR=\"CID\",1")
-//        simHat.sendCommand("+HTTPPARA=\"URL\",\"http://$url:$port\"")
-//        simHat.sendCommand("+HTTPACTION=0")
-
-//        Thread.sleep(5000)
-//        simHat.sendCommand("+HTTPREAD")
-//
-//        simHat.once("+HTTPREAD:") {
-//            simHat.sendCommand("+HTTPTERM")
-//        }
-//    }
 
 fun getPort(): String {
 
@@ -88,10 +44,10 @@ fun main(args: Array<String>) {
 
 
     // get GPS data
-//    simHat.writeCommand(Sim800Commands.gpsState, "1")
-//    simHat.writeCommand(Sim800Commands.getPositionOnInterval, "2")
+    simHat.writeCommand(Sim800Commands.gpsState, "1")
+    simHat.writeCommand(Sim800Commands.getPositionOnInterval, "2")
 //    var i = 0
-//    simHat.addEventListener(SIM868Responses.gpsInfo) {
+//    simHat.addEventListener(SIM800Responses.gpsInfo) {
 //
 //        val gpsData = DataParsers.parseGps(it)
 //
@@ -101,7 +57,7 @@ fun main(args: Array<String>) {
 //        }
 //
 //        if (i == 10) {
-//            simHat.disposeEventListener(SIM868Responses.gpsInfo)
+//            simHat.disposeEventListener(SIM800Responses.gpsInfo)
 //        }
 //    }
 
@@ -122,8 +78,8 @@ fun main(args: Array<String>) {
 //    simHat.executeCommand(Sim800Commands.allSMS)
 
 
-    simHat.enableGprs()
-    simHat.httpGet("zmeurica.ddns.net", "8080")
+//    simHat.enableGprs()
+//    simHat.httpGet("zmeurica.ddns.net", "8080")
 
 }
 

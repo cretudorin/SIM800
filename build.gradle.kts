@@ -11,7 +11,7 @@ plugins {
 }
 
 application {
-    mainClassName = "sim868.kotlin.AppKt"
+    mainClassName = "sim800.kotlin.AppKt"
 }
 
 repositories {

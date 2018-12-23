@@ -1,4 +1,4 @@
-package sim868.kotlin
+package sim800.kotlin
 
 import com.fazecast.jSerialComm.SerialPort
 import com.fazecast.jSerialComm.SerialPortDataListener

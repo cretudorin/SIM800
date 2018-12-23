@@ -1,4 +1,4 @@
-package sim868.kotlin
+package sim800.kotlin
 
 
 class GpsData(gpsDataMap: Map<String, String>) {
@@ -28,6 +28,7 @@ class GpsData(gpsDataMap: Map<String, String>) {
 }
 
 class DataParsers {
+
     companion object {
         fun parseGps(gpgStringResponse: String): GpsData? {
             val gpsArray = gpgStringResponse.replace("+UGNSINF:", "").split(",")

@@ -1,7 +1,8 @@
 package sim800.kotlin
 
+class GpsData(private val gpsDataMap: Map<String, String>) {
 
-class GpsData(gpsDataMap: Map<String, String>) {
+    override fun toString() = gpsDataMap.toString()
 
     val gpsRunStatus: String by gpsDataMap
     val fixStatus: String by gpsDataMap

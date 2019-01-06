@@ -14,7 +14,7 @@ class Sim800(port: String, baud_rate: Int = 115200, var apn: String) {
 
     fun once(event: String, eventHandler: (data: String) -> Unit) {
 
-        eventListeners[event] = serialObservable.takeUntil {
+        eventListeners["once_$event"] = serialObservable.takeUntil {
             it.toUpperCase().contains(event.toUpperCase())
         }.subscribe {
             if (it.toUpperCase().contains(event.toUpperCase())) {
@@ -22,6 +22,7 @@ class Sim800(port: String, baud_rate: Int = 115200, var apn: String) {
             }
         }
     }
+
 
     fun addEventListener(event: String, eventHandler: (data: String) -> Unit) {
         eventListeners[event] = serialObservable.subscribe {
@@ -32,12 +33,16 @@ class Sim800(port: String, baud_rate: Int = 115200, var apn: String) {
     }
 
     fun disposeEventListener(event: String) = eventListeners[event]?.dispose()
+    fun disposeOnceListener(event: String) = eventListeners["once_$event"]?.dispose()
+
 
     private fun sendCommand(command: String) = Thread.sleep(100).also { serialPort.serialWrite("AT$command\r") }
 
     fun testCommand(command: String) = sendCommand("$command=?")
     fun readCommand(command: String) = sendCommand("$command?")
     fun writeCommand(command: String, value: String) = sendCommand("$command=$value")
+    fun writeCommand(command: String, value: Int) = sendCommand("$command=$value")
+
     fun executeCommand(command: String) = sendCommand(command)
     fun sendRawCommand(command: String) = Thread.sleep(100).also { serialPort.serialWrite("$command\r") }
 
@@ -62,6 +67,30 @@ class Sim800(port: String, baud_rate: Int = 115200, var apn: String) {
         writeCommand(Sim800Commands.setBearer, "0,1")
     }
 
+
+    fun getGPS(interval: Int): Observable<GpsData> {
+
+        writeCommand(Sim800Commands.gpsState, 1)
+        writeCommand(Sim800Commands.getPositionOnInterval, interval)
+
+        return Observable.create<GpsData> { emitter ->
+            addEventListener(SIM800Responses.gpsInfo) {
+
+                val gpsData = DataParsers.parseGps(it)
+                gpsData?.let{ self ->
+                    emitter.onNext(self)
+                }
+            }
+        }.publish().autoConnect()
+
+    }
+
+
+    fun disableGPS() {
+        writeCommand(Sim800Commands.gpsState, 0)
+    }
+
+
     fun httpGet(url: String, port: String): Observable<String> {
 
         executeCommand(Sim800Commands.initHttpService)
@@ -69,7 +98,7 @@ class Sim800(port: String, baud_rate: Int = 115200, var apn: String) {
         writeCommand(Sim800Commands.setHttpParam, """"URL","$url:$port"""")
         executeCommand(Sim800Commands.doGetRequest)
 
-        val result = "AT+HTTPREAD+HTTPREAD:12HelloWorld!OK"
+//        val result = "AT+HTTPREAD+HTTPREAD:12HelloWorld!OK"
         once(SIM800Responses.httpResponse) {
 
         }

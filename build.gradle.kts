@@ -8,6 +8,7 @@ val kotlinVersion = "1.3.0"
 plugins {
     application
     kotlin("jvm") version  "1.3.0"
+    idea
 }
 
 application {
@@ -25,7 +26,7 @@ dependencies {
     compile("com.fazecast:jSerialComm:[2.0.0,3.0.0)")
     compile("io.reactivex.rxjava2:rxkotlin:2.3.0")
     compile("io.jenetics:jpx:1.4.0")
+    compile("com.github.ajalt:clikt:1.6.0")
     compile(kotlin("reflect"))
 
 }
-

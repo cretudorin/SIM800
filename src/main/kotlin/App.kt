@@ -22,7 +22,8 @@ fun getPort(): String {
                 filename == "/dev/ttyS0" ||
                 filename == "/dev/ttyAMA0" ||
                 filename == "/dev/ttyUSB0" ||
-                filename == "/dev/ttyUSB1"
+                filename == "/dev/ttyUSB1" ||
+                filename == "/dev/ttyUSB2"
             ) {
                 return filename
             }
@@ -39,11 +40,23 @@ class Main : CliktCommand() {
     private val port = getPort()
     private val simHat = Sim800(port, apn = "web.vodafone.de")
 
+
     override fun run() {
+
+        simHat.executeCommand(Sim800Commands.echoOn)
+        simHat.serialObservable.subscribe {
+            println(it)
+
+        }
+
+//        simHat.enableGprs()
+        simHat.httpGet("https://nc.gradinacufluturi.ro"){
+            println(it)
+        }
 
         gps?.let {
             simHat.getGPS(it).subscribe { gpsData ->
-                println(gpsData.toString())
+                println(gpsData.toJson())
             }
         }
     }

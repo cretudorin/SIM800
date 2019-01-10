@@ -1,8 +1,10 @@
 package sim800.kotlin
+import com.google.gson.Gson
 
 class GpsData(private val gpsDataMap: Map<String, String>) {
 
     override fun toString() = gpsDataMap.toString()
+    fun toJson() = Gson().toJson(gpsDataMap)
 
     val gpsRunStatus: String by gpsDataMap
     val fixStatus: String by gpsDataMap

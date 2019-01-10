@@ -85,6 +85,7 @@ class SIM800Responses {
     companion object {
         val gpsInfo = "UGNSINF"
         val newSms = "CMTI"
-        val httpResponse = "+HTTPREAD:"
+        val httpRead = "+HTTPREAD:"
+        val httpResponse ="+HTTPACTION:"
     }
 }

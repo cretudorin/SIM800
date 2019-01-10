@@ -19,6 +19,7 @@ class Sim800(port: String, baud_rate: Int = 115200, var apn: String) {
         }.subscribe {
             if (it.toUpperCase().contains(event.toUpperCase())) {
                 eventHandler(it)
+                disposeOnceListener(event)
             }
         }
     }
@@ -77,7 +78,7 @@ class Sim800(port: String, baud_rate: Int = 115200, var apn: String) {
             addEventListener(SIM800Responses.gpsInfo) {
 
                 val gpsData = DataParsers.parseGps(it)
-                gpsData?.let{ self ->
+                gpsData?.let { self ->
                     emitter.onNext(self)
                 }
             }
@@ -91,24 +92,28 @@ class Sim800(port: String, baud_rate: Int = 115200, var apn: String) {
     }
 
 
-    fun httpGet(url: String, port: String): Observable<String> {
+    fun httpGet(url: String, callback: (result: String) -> Unit) {
 
         executeCommand(Sim800Commands.initHttpService)
         writeCommand(Sim800Commands.setHttpParam, """"CID",1""")
-        writeCommand(Sim800Commands.setHttpParam, """"URL","$url:$port"""")
+        writeCommand(Sim800Commands.setHttpParam, """"URL","$url"""")
         executeCommand(Sim800Commands.doGetRequest)
 
-//        val result = "AT+HTTPREAD+HTTPREAD:12HelloWorld!OK"
         once(SIM800Responses.httpResponse) {
-
-        }
-
-        once("+HTTPACTION:") {
             executeCommand(Sim800Commands.httpRead)
             executeCommand(Sim800Commands.stopHttpService)
         }
 
-        return Observable.create<String> { it.onComplete() }.publish().autoConnect()
+        once(SIM800Responses.httpRead) { result ->
+
+            val bytesRegex = """(\d+)""".toRegex()
+            val bytesString = bytesRegex.find(result)
+
+            bytesString?.range?.last?.let {
+                callback(result.subSequence(it + 1, result.length - 2).toString())
+            }
+        }
+
     }
 
 

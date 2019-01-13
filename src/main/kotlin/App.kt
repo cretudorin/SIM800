@@ -1,9 +1,7 @@
 package sim800.kotlin
 
 import com.github.ajalt.clikt.core.CliktCommand
-import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
-import com.github.ajalt.clikt.parameters.options.prompt
 import com.github.ajalt.clikt.parameters.types.int
 import java.io.File
 
@@ -36,6 +34,7 @@ fun getPort(): String {
 class Main : CliktCommand() {
 
     private val gps: Int? by option(help = "Get GPS position [interval]").int()
+    private val gprs: Int? by option(help = "Set gprs status [ 1 / 0 ]").int()
 
     private val port = getPort()
     private val simHat = Sim800(port, apn = "web.vodafone.de")
@@ -44,12 +43,23 @@ class Main : CliktCommand() {
     override fun run() {
 
         simHat.executeCommand(Sim800Commands.echoOn)
-        simHat.serialObservable.subscribe {
-            println(it)
 
+        simHat.serialObservable.subscribe { println(it) }
+
+//        simHat.enableGPRS { result ->
+//            println(result)
+//        }
+
+
+
+        gprs?.let {
+            if (it == 1) {
+                simHat.enableGPRS { result -> println(result) }
+            } else {
+                simHat.disableGPRS { result -> println(result) }
+            }
         }
 
-//        simHat.enableGprs()
         simHat.httpGet("https://nc.gradinacufluturi.ro"){
             println(it)
         }
@@ -61,5 +71,6 @@ class Main : CliktCommand() {
         }
     }
 }
+
 
 fun main(args: Array<String>) = Main().main(args)

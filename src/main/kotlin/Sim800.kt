@@ -3,38 +3,46 @@ package sim800.kotlin
 import com.pi4j.io.gpio.RaspiPin
 import io.reactivex.Observable
 import io.reactivex.disposables.Disposable
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 
 class Sim800(port: String, baud_rate: Int = 115200, var apn: String) {
 
     private var serialPort: SerialComm = SerialComm(port, baud_rate)
+    private val eventListeners = mutableMapOf<String, Disposable?>()
+    private var GPRSStatus = false
+
     val serialObservable = serialPort.serialRead()
 
-    private val eventListeners = mutableMapOf<String, Disposable?>()
+    fun once(event: String, eventHandler: (data: String, eventId: String) -> Unit) {
 
-    fun once(event: String, eventHandler: (data: String) -> Unit) {
-
-        eventListeners["once_$event"] = serialObservable.takeUntil {
+        val randomInt = (0..LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)).random()
+        val eventId = "once_${event}_$randomInt"
+        eventListeners[eventId] = serialObservable.takeUntil {
             it.toUpperCase().contains(event.toUpperCase())
         }.subscribe {
             if (it.toUpperCase().contains(event.toUpperCase())) {
-                eventHandler(it)
-                disposeOnceListener(event)
+                eventHandler(it, eventId)
+                disposeListener(eventId)
             }
         }
     }
 
 
-    fun addEventListener(event: String, eventHandler: (data: String) -> Unit) {
-        eventListeners[event] = serialObservable.subscribe {
+    fun addEventListener(event: String, eventHandler: (data: String, eventId: String) -> Unit) {
+
+        val randomInt = (0..LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)).random()
+        val eventId = "${event}_$randomInt"
+
+        eventListeners[eventId] = serialObservable.subscribe {
             if (it.toUpperCase().contains(event.toUpperCase())) {
-                eventHandler(it)
+                eventHandler(it, eventId)
             }
         }
     }
 
-    fun disposeEventListener(event: String) = eventListeners[event]?.dispose()
-    fun disposeOnceListener(event: String) = eventListeners["once_$event"]?.dispose()
+    fun disposeListener(eventId: String) = eventListeners[eventId]?.dispose()
 
 
     private fun sendCommand(command: String) = Thread.sleep(100).also { serialPort.serialWrite("AT$command\r") }
@@ -57,17 +65,58 @@ class Sim800(port: String, baud_rate: Int = 115200, var apn: String) {
         gpio.release()
     }
 
-    fun enableGprs() {
+    fun enableGPRS(callback: (result: Boolean) -> Unit) {
 
-        writeCommand(Sim800Commands.setBearer, """3,1,"Contype","GPRS"""")
-        writeCommand(Sim800Commands.setBearer, """3,1,"APN",$apn""")
-        writeCommand(Sim800Commands.setBearer, "1,1")
+        fun enable() {
+
+            addEventListener(SIM800Responses.setBearer) { response: String, eventId: String ->
+                if (!response.contains("ERROR")) {
+
+                    if (response == """AT+SAPBR=1,1""") {
+                        callback(true)
+                        disposeListener(eventId)
+                        GPRSStatus = true
+                    }
+
+                } else {
+                    callback(false)
+                }
+
+            }
+            writeCommand(Sim800Commands.setBearer, """3,1,"Contype","GPRS"""")
+            writeCommand(Sim800Commands.setBearer, """3,1,"APN",$apn""")
+            writeCommand(Sim800Commands.setBearer, "1,1")
+        }
+
+        if (!GPRSStatus) {
+            enable()
+        } else {
+            callback(true)
+        }
     }
 
-    fun disableGprs() {
-        writeCommand(Sim800Commands.setBearer, "0,1")
-    }
 
+    fun disableGPRS(callback: (result: Boolean) -> Unit) {
+
+        fun disable() {
+            once(SIM800Responses.setBearer) { response: String, _: String ->
+
+                val result = !response.contains("ERROR")
+                if (result) {
+                    GPRSStatus = false
+                }
+
+                callback(result)
+            }
+            writeCommand(Sim800Commands.gprsAttachment, "0,1")
+        }
+
+        if (GPRSStatus) {
+            disable()
+        } else {
+            callback(true)
+        }
+    }
 
     fun getGPS(interval: Int): Observable<GpsData> {
 
@@ -75,9 +124,9 @@ class Sim800(port: String, baud_rate: Int = 115200, var apn: String) {
         writeCommand(Sim800Commands.getPositionOnInterval, interval)
 
         return Observable.create<GpsData> { emitter ->
-            addEventListener(SIM800Responses.gpsInfo) {
+            addEventListener(SIM800Responses.gpsInfo) { response: String, _: String ->
 
-                val gpsData = DataParsers.parseGps(it)
+                val gpsData = DataParsers.parseGps(response)
                 gpsData?.let { self ->
                     emitter.onNext(self)
                 }
@@ -99,18 +148,17 @@ class Sim800(port: String, baud_rate: Int = 115200, var apn: String) {
         writeCommand(Sim800Commands.setHttpParam, """"URL","$url"""")
         executeCommand(Sim800Commands.doGetRequest)
 
-        once(SIM800Responses.httpResponse) {
+        once(SIM800Responses.httpResponse) { _: String, _: String ->
             executeCommand(Sim800Commands.httpRead)
-            executeCommand(Sim800Commands.stopHttpService)
         }
 
-        once(SIM800Responses.httpRead) { result ->
+        once(SIM800Responses.httpRead) { response: String, _: String ->
 
             val bytesRegex = """(\d+)""".toRegex()
-            val bytesString = bytesRegex.find(result)
+            val bytesString = bytesRegex.find(response)
 
             bytesString?.range?.last?.let {
-                callback(result.subSequence(it + 1, result.length - 2).toString())
+                callback(response.subSequence(it + 1, response.length - 2).toString())
             }
         }
 

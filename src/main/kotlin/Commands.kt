@@ -52,7 +52,6 @@ class Sim800Commands {
         val redial = "DL"
         val disconnect = "H"
         fun dial(number: String) = "D$number;"
-
         val pin = "+CPIN"
         val CIP = "+CLIP"
         val signalQuality = "+CSQ"
@@ -86,6 +85,8 @@ class SIM800Responses {
         val gpsInfo = "UGNSINF"
         val newSms = "CMTI"
         val httpRead = "+HTTPREAD:"
-        val httpResponse ="+HTTPACTION:"
+        val httpResponse = "+HTTPACTION:"
+        val setBearer = "+SAPBR"
+        val gprsAttachment = "+CGATT"
     }
 }

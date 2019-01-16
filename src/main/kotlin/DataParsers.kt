@@ -62,7 +62,10 @@ class DataParsers {
             val length = gpsArray.count()
 
             return if (length == 21) {
-                val gpsDataMap = gpsArray.associateBy({ mapping[gpsArray.indexOf(it)] }, { it })
+
+                val gpsDataMap = mutableMapOf<String, String>()
+
+                gpsArray.forEachIndexed { index, item -> gpsDataMap[mapping[index]] = item }
                 GpsData(gpsDataMap)
             } else {
                 null

@@ -4,6 +4,8 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.int
 import java.io.File
+import io.jenetics.jpx.GPX
+
 
 //sudo systemctl stop serial-getty@ttyAMA0.service
 //sudo systemctl disable serial-getty@ttyS0.service
@@ -50,6 +52,21 @@ class Main : CliktCommand() {
 //            println(result)
 //        }
 
+//        GPX.builder().addTrack { track ->
+//            track.addSegment { segment ->
+//
+//                simHat.getGPS(1).subscribe {
+//                    segment.addPoint { p ->
+//                        p.lat(it.lat.toDouble()).lon(it.long.toDouble()).ele(it.mslAltitude.toDouble())
+//                    }
+//                }
+//
+//
+//            }
+//        }.build()
+
+//        simHat.enableGPRS { result -> println(result) }
+
 
 
         gprs?.let {
@@ -60,7 +77,7 @@ class Main : CliktCommand() {
             }
         }
 
-        simHat.httpGet("https://nc.gradinacufluturi.ro"){
+        simHat.httpGet("https://nc.gradinacufluturi.ro:8081") {
             println(it)
         }
 

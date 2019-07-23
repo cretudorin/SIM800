@@ -77,7 +77,7 @@ class Main : CliktCommand() {
             }
         }
 
-        simHat.httpGet("https://nc.gradinacufluturi.ro:8081") {
+        simHat.httpGet("https://xxx:8081") {
             println(it)
         }
 
